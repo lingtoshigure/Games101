@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.2)
+project (Games101)
+
+set(ThirdParty_DIR ${CMAKE_SOURCE_DIR}/3rdparty)
+set(Binary_DIR ${CMAKE_SOURCE_DIR}/bin)
+
+add_subdirectory(Assignment1)
+add_subdirectory(Assignment2)
+add_subdirectory(Assignment3)
+add_subdirectory(Assignment4)
+add_subdirectory(Assignment5)
+add_subdirectory(Assignment6)
+add_subdirectory(Assignment7)
+add_subdirectory(Assignment8)
+add_subdirectory(CGL)
