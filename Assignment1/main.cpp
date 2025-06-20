@@ -74,7 +74,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
     //正交投影矩阵
     M_ortho <<
         2 / (right - left), 0, 0, 0,
-        0, 2 / (top - bottom) / 2, 0, 0,
+        0, 2 / (top - bottom), 0, 0,
         0, 0, 2 / (zNear - zFar), 0,
         0, 0, 0, 1;
 
