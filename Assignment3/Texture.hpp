@@ -12,6 +12,7 @@ private:
     cv::Mat image_data;
 
 public:
+    //从图片生成纹理
     Texture(const std::string& name)
     {
         image_data = cv::imread(name);
@@ -22,10 +23,15 @@ public:
 
     int width, height;
 
+    //查找纹理颜色
     Eigen::Vector3f getColor(float u, float v)
     {
+        if (u < 0.0f) return Eigen::Vector3f(0, 0, 0);
+        if (u > 1.0f) return Eigen::Vector3f(0, 0, 0);
+        if (v < 0.0f) return Eigen::Vector3f(0, 0, 0);
+        if (v > 1.0f) return Eigen::Vector3f(0, 0, 0);
         auto u_img = u * width;
-        auto v_img = (1 - v) * height;
+        auto  v_img = (1 - v) * height;
         auto color = image_data.at<cv::Vec3b>(v_img, u_img);
         return Eigen::Vector3f(color[0], color[1], color[2]);
     }

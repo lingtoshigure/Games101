@@ -257,6 +257,7 @@ static Eigen::Vector2f interpolate(float alpha, float beta, float gamma, const E
 }
 
 //Screen space rasterization
+//实现法向量，颜色，纹理颜色的插值
 void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eigen::Vector3f, 3>& view_pos) 
 {
     // TODO: From your HW3, get the triangle rasterization code.
@@ -279,7 +280,56 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
     // Use: payload.view_pos = interpolated_shadingcoords;
     // Use: Instead of passing the triangle's color directly to the frame buffer, pass the color to the shaders first to get the final color;
     // Use: auto pixel_color = fragment_shader(payload);
+    auto v = t.toVector4();
+    //选择采样点
+    //创建三角形包围盒
+    float min_x = std::min(v[0].x(), std::min(v[1].x(),v[2].x()));
+    float max_x = std::max(v[0].x(), std::max(v[1].x(), v[2].x()));
+    float min_y = std::min(v[0].y(), std::min(v[1].y(), v[2].y()));
+    float max_y = std::max(v[0].y(), std::max(v[1].y(), v[2].y()));
 
+    //转换为整数
+    int min_x_int = std::floor(min_x);
+    int max_x_int = std::ceil(max_x);
+    int min_y_int = std::floor(min_y);
+    int max_y_int = std::floor(max_y);
+
+    for (int x = min_x_int; x <= max_x_int; x++)
+    {
+        for (int y = min_y_int; y <= max_y_int; y++)
+        {
+            if (insideTriangle((float)x + 0.5, (float)y + 0.5, t.v))
+            {
+                //重心坐标
+                auto [alpha, beta, gamma] = computeBarycentric2D((float)x + 0.5, (float)y + 0.5, t.v);
+                //Z-buffer插值
+                float Z = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
+                float zp = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
+                zp *= Z;
+
+                if (zp<depth_buf[get_index(x,y)])
+                {
+                    //颜色插值
+                    auto interpolated_color = interpolate(alpha, beta, gamma, t.color[0], t.color[1], t.color[2],1);
+                    //法线插值
+                    auto interpolated_normal = interpolate(alpha, beta, gamma, t.normal[0], t.normal[1], t.normal[2], 1);
+                    //纹理颜色插值
+                    auto interpolated_texcoords = interpolate(alpha, beta, gamma, t.tex_coords[0], t.tex_coords[1], t.tex_coords[2],1);
+                    //底纹颜色插值
+                    auto interpolated_shadingcoords = interpolate(alpha, beta, gamma, view_pos[0], view_pos[1], view_pos[2], 1);
+                    
+                    fragment_shader_payload payload(interpolated_color, interpolated_normal.normalized(), interpolated_texcoords, texture ? &*texture : nullptr);
+                    payload.view_pos = interpolated_shadingcoords;
+                    auto pixel_color = fragment_shader(payload);
+                    //更新z值
+                    depth_buf[get_index(x, y)] = zp;
+                    Eigen::Vector2i point = { (float)x,(float)y };
+                    set_pixel(point, pixel_color);
+
+                }
+            }
+        }
+    }
  
 }
 

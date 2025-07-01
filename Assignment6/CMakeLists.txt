@@ -10,7 +10,7 @@ set_target_properties(RayTracing2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${Bi
 set_target_properties(RayTracing2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${Binary_DIR}/Assignment6/Release)
 
 add_custom_command(TARGET RayTracing2 POST_BUILD
-     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/models ${Binary_DIR}/Assignment6/models
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/models ${Binary_DIR}/Assignment6/models
     COMMAND if $<CONFIG>==Debug
         ${CMAKE_COMMAND} -E copy_if_different ${ThirdParty_DIR}/opencv/bin/opencv_world4110d.dll $<TARGET_FILE_DIR:RayTracing2>
     COMMAND if $<CONFIG>==Release
