@@ -42,11 +42,11 @@ bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1,
 class Triangle : public Object
 {
 public:
-    Vector3f v0, v1, v2; // vertices A, B ,C , counter-clockwise order
-    Vector3f e1, e2;     // 2 edges v1-v0, v2-v0;
-    Vector3f t0, t1, t2; // texture coords
-    Vector3f normal;
-    Material* m;
+    Vector3f v0, v1, v2; // vertices A, B ,C , counter-clockwise order  顶点A,B,C 逆时针方向
+    Vector3f e1, e2;     // 2 edges v1-v0, v2-v0; 2条边 v1-v0,v2-v0
+    Vector3f t0, t1, t2; // texture coords 纹理坐标
+    Vector3f normal;//法向量
+    Material* m;//材质
 
     Triangle(Vector3f _v0, Vector3f _v1, Vector3f _v2, Material* _m = nullptr)
         : v0(_v0), v1(_v1), v2(_v2), m(_m)
@@ -77,12 +77,13 @@ class MeshTriangle : public Object
 public:
     MeshTriangle(const std::string& filename)
     {
+        //根据文件路径加载obj文件
         objl::Loader loader;
         loader.LoadFile(filename);
 
         assert(loader.LoadedMeshes.size() == 1);
         auto mesh = loader.LoadedMeshes[0];
-
+        //min_vert用于记录包围盒的最小点，max_vert用于记录包围盒最大点
         Vector3f min_vert = Vector3f{std::numeric_limits<float>::infinity(),
                                      std::numeric_limits<float>::infinity(),
                                      std::numeric_limits<float>::infinity()};
@@ -90,6 +91,7 @@ public:
                                      -std::numeric_limits<float>::infinity(),
                                      -std::numeric_limits<float>::infinity()};
         for (int i = 0; i < mesh.Vertices.size(); i += 3) {
+            //记录一个三角面片的三个顶点
             std::array<Vector3f, 3> face_vertices;
             for (int j = 0; j < 3; j++) {
                 auto vert = Vector3f(mesh.Vertices[i + j].Position.X,
@@ -97,7 +99,7 @@ public:
                                      mesh.Vertices[i + j].Position.Z) *
                             60.f;
                 face_vertices[j] = vert;
-
+                //在每次遍历中更新最大点和最小点
                 min_vert = Vector3f(std::min(min_vert.x, vert.x),
                                     std::min(min_vert.y, vert.y),
                                     std::min(min_vert.z, vert.z));
@@ -113,16 +115,18 @@ public:
             new_mat->Ks = 0.0;
             new_mat->specularExponent = 0;
 
+            //创建一个材质，将每个面片的三个顶点及其材质添加到triangles向量中
             triangles.emplace_back(face_vertices[0], face_vertices[1],
                                    face_vertices[2], new_mat);
         }
-
+        //使用最小点和最大点表示包围盒的6个面
         bounding_box = Bounds3(min_vert, max_vert);
 
         std::vector<Object*> ptrs;
         for (auto& tri : triangles)
             ptrs.push_back(&tri);
 
+        //创建bvh实例
         bvh = new BVHAccel(ptrs);
     }
 
@@ -208,10 +212,11 @@ inline bool Triangle::intersect(const Ray& ray, float& tnear,
 
 inline Bounds3 Triangle::getBounds() { return Union(Bounds3(v0, v1), v2); }
 
+//判断求交，返回三角面片相关属性
 inline Intersection Triangle::getIntersection(Ray ray)
 {
     Intersection inter;
-
+    //此时可视方向与三角面片朝向相同，眼睛看不到
     if (dotProduct(ray.direction, normal) > 0)
         return inter;
     double u, v, t_tmp = 0;
@@ -219,7 +224,7 @@ inline Intersection Triangle::getIntersection(Ray ray)
     double det = dotProduct(e1, pvec);
     if (fabs(det) < EPSILON)
         return inter;
-
+    //moller-trumbore算法求交点
     double det_inv = 1. / det;
     Vector3f tvec = ray.origin - v0;
     u = dotProduct(tvec, pvec) * det_inv;
@@ -232,10 +237,13 @@ inline Intersection Triangle::getIntersection(Ray ray)
     t_tmp = dotProduct(e2, qvec) * det_inv;
 
     // TODO find ray triangle intersection
-
-
-
-
+    //参考Sphere的写法
+    inter.happened = true; //光线与三角面片是否相交
+    inter.coords = ray(t_tmp);//交点坐标
+    inter.normal = normal;//交点法线
+    inter.distance = t_tmp;//交点距光源的距离
+    inter.obj = this;//交点对应的物体
+    inter.m = m;//交点对应的物体材质
     return inter;
 }
 

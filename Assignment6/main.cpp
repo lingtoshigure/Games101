@@ -11,9 +11,11 @@
 // function().
 int main(int argc, char** argv)
 {
+    //场景初始化
     Scene scene(1280, 960);
-
-    MeshTriangle bunny("../models/bunny/bunny.obj");
+    //加载obj模型文件
+    std::string obj_path = SOURCE_DIR;
+    MeshTriangle bunny(obj_path+"/models/bunny/bunny.obj");
 
     scene.Add(&bunny);
     scene.Add(std::make_unique<Light>(Vector3f(-20, 70, 20), 1));
